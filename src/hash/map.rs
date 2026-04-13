@@ -21,15 +21,19 @@
 //! [std::hash::Hash]: https://doc.rust-lang.org/std/hash/trait.Hash.html
 //! [std::collections::hash_map::RandomState]: https://doc.rust-lang.org/std/collections/hash_map/struct.RandomState.html
 
-use std::borrow::Borrow;
-use std::cmp::Ordering;
+use alloc::borrow::ToOwned;
+use alloc::vec::Vec;
+use core::borrow::Borrow;
+use core::cmp::Ordering;
+#[cfg(feature = "std")]
 use std::collections;
+#[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
-use std::fmt::{Debug, Error, Formatter};
-use std::hash::{BuildHasher, Hash, Hasher};
-use std::iter::{FromIterator, FusedIterator, Sum};
-use std::mem;
-use std::ops::{Add, Index, IndexMut};
+use core::fmt::{Debug, Error, Formatter};
+use core::hash::{BuildHasher, Hash, Hasher};
+use core::iter::{FromIterator, FusedIterator, Sum};
+use core::mem;
+use core::ops::{Add, Index, IndexMut};
 
 use crate::nodes::hamt::{
     hash_key, Drain as NodeDrain, HashBits, HashValue, Iter as NodeIter, IterMut as NodeIterMut,
@@ -55,6 +59,7 @@ use crate::util::{Pool, PoolRef, Ref};
 /// );
 /// # }
 /// ```
+#[cfg(feature = "std")]
 #[macro_export]
 macro_rules! hashmap {
     () => { $crate::hashmap::HashMap::new() };
@@ -97,7 +102,16 @@ def_pool!(HashMapPool<K,V>, Node<(K,V)>);
 /// [std::hash::Hash]: https://doc.rust-lang.org/std/hash/trait.Hash.html
 /// [std::collections::hash_map::RandomState]: https://doc.rust-lang.org/std/collections/hash_map/struct.RandomState.html
 
+#[cfg(feature = "std")]
 pub struct HashMap<K, V, S = RandomState> {
+    size: usize,
+    pool: HashMapPool<K, V>,
+    root: PoolRef<Node<(K, V)>>,
+    hasher: Ref<S>,
+}
+
+#[cfg(not(feature = "std"))]
+pub struct HashMap<K, V, S> {
     size: usize,
     pool: HashMapPool<K, V>,
     root: PoolRef<Node<(K, V)>>,
@@ -119,6 +133,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<K, V> HashMap<K, V, RandomState> {
     /// Construct an empty hash map.
     #[inline]
@@ -141,6 +156,7 @@ impl<K, V> HashMap<K, V, RandomState> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<K, V> HashMap<K, V, RandomState>
 where
     K: Hash + Eq + Clone,
@@ -220,7 +236,7 @@ impl<K, V, S> HashMap<K, V, S> {
     ///
     /// Time: O(1)
     pub fn ptr_eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self, other) || PoolRef::ptr_eq(&self.root, &other.root)
+        core::ptr::eq(self, other) || PoolRef::ptr_eq(&self.root, &other.root)
     }
 
     /// Get a reference to the memory pool used by this map.
@@ -374,15 +390,10 @@ where
         if self.len() != other.len() {
             return false;
         }
-        let mut seen = collections::HashSet::new();
+        // Since both maps have the same length, it suffices to check that
+        // every key in self exists in other with the same value.
         for (key, value) in self.iter() {
             if Some(value) != other.get(key) {
-                return false;
-            }
-            seen.insert(key);
-        }
-        for key in other.keys() {
-            if !seen.contains(&key) {
                 return false;
             }
         }
@@ -2042,6 +2053,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<K, V, S> From<collections::HashMap<K, V>> for HashMap<K, V, S>
 where
     K: Hash + Eq + Clone,
@@ -2053,6 +2065,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a, K, V, S> From<&'a collections::HashMap<K, V>> for HashMap<K, V, S>
 where
     K: Hash + Eq + Clone,
@@ -2064,6 +2077,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<K, V, S> From<collections::BTreeMap<K, V>> for HashMap<K, V, S>
 where
     K: Hash + Eq + Clone,
@@ -2075,6 +2089,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a, K, V, S> From<&'a collections::BTreeMap<K, V>> for HashMap<K, V, S>
 where
     K: Hash + Eq + Clone,
@@ -2123,7 +2138,7 @@ mod test {
     use crate::test::LolHasher;
     use ::proptest::num::{i16, usize};
     use ::proptest::{collection, proptest};
-    use std::hash::BuildHasherDefault;
+    use core::hash::BuildHasherDefault;
 
     #[test]
     fn safe_mutation() {

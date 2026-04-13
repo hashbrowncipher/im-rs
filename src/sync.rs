@@ -4,9 +4,10 @@
 
 pub(crate) use self::lock::Lock;
 
-#[cfg(threadsafe)]
+#[cfg(all(threadsafe, feature = "std"))]
 mod lock {
-    use std::sync::{Arc, Mutex, MutexGuard};
+    use alloc::sync::Arc;
+    use std::sync::{Mutex, MutexGuard};
 
     /// Thread safe lock: just wraps a `Mutex`.
     pub(crate) struct Lock<A> {
@@ -35,10 +36,14 @@ mod lock {
     }
 }
 
-#[cfg(not(threadsafe))]
+// Without std (no Mutex available) or without threadsafe, use RefCell.
+// This is sound because FocusMut::split_at (the only operation that clones
+// a Lock to create shared mutable access) is gated behind the std feature.
+// All other Lock usage is single-holder.
+#[cfg(any(not(threadsafe), not(feature = "std")))]
 mod lock {
-    use std::cell::{RefCell, RefMut};
-    use std::rc::Rc;
+    use core::cell::{RefCell, RefMut};
+    use alloc::rc::Rc;
 
     /// Single threaded lock: a `RefCell` so we should safely panic if somehow
     /// trying to access the stored data twice from the same thread.

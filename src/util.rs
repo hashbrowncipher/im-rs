@@ -4,9 +4,9 @@
 
 // Every codebase needs a `util` module.
 
-use std::cmp::Ordering;
-use std::ops::{Bound, IndexMut, Range, RangeBounds};
-use std::ptr;
+use core::cmp::Ordering;
+use core::ops::{Bound, IndexMut, Range, RangeBounds};
+use core::ptr;
 
 #[cfg(feature = "pool")]
 pub(crate) use refpool::{PoolClone, PoolDefault};
@@ -19,7 +19,7 @@ pub(crate) use crate::fakepool::{Arc as PoolRef, Pool, PoolClone, PoolDefault};
 
 // `Ref` == `Arc` when threadsafe
 #[cfg(threadsafe)]
-pub(crate) type Ref<A> = std::sync::Arc<A>;
+pub(crate) type Ref<A> = alloc::sync::Arc<A>;
 
 // `Rc` without refpool
 #[cfg(all(not(threadsafe), not(feature = "pool")))]
@@ -33,7 +33,7 @@ pub(crate) type Pool<A> = refpool::Pool<A>;
 
 // `Ref` == `Rc` when not threadsafe
 #[cfg(not(threadsafe))]
-pub(crate) type Ref<A> = std::rc::Rc<A>;
+pub(crate) type Ref<A> = alloc::rc::Rc<A>;
 
 pub(crate) fn clone_ref<A>(r: Ref<A>) -> A
 where

@@ -43,14 +43,17 @@
 //! [Vec]: https://doc.rust-lang.org/std/vec/struct.Vec.html
 //! [VecDeque]: https://doc.rust-lang.org/std/collections/struct.VecDeque.html
 
-use std::borrow::Borrow;
-use std::cmp::Ordering;
-use std::fmt::{Debug, Error, Formatter};
-use std::hash::{Hash, Hasher};
-use std::iter::Sum;
-use std::iter::{FromIterator, FusedIterator};
-use std::mem::{replace, swap};
-use std::ops::{Add, Index, IndexMut, RangeBounds};
+use alloc::borrow::ToOwned;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::borrow::Borrow;
+use core::cmp::Ordering;
+use core::fmt::{Debug, Error, Formatter};
+use core::hash::{Hash, Hasher};
+use core::iter::Sum;
+use core::iter::{FromIterator, FusedIterator};
+use core::mem::{replace, swap};
+use core::ops::{Add, Index, IndexMut, RangeBounds};
 
 use sized_chunks::InlineArray;
 
@@ -319,7 +322,7 @@ impl<A: Clone> Vector<A> {
     /// Test whether a vector is currently inlined.
     ///
     /// Vectors small enough that their contents could be stored entirely inside
-    /// the space of `std::mem::size_of::<Vector<A>>()` bytes are stored inline on
+    /// the space of `core::mem::size_of::<Vector<A>>()` bytes are stored inline on
     /// the stack instead of allocating any chunks. This method returns `true` if
     /// this vector is currently inlined, or `false` if it currently has chunks allocated
     /// on the heap.
@@ -357,7 +360,7 @@ impl<A: Clone> Vector<A> {
             (left.is_empty() && right.is_empty()) || PoolRef::ptr_eq(left, right)
         }
 
-        if std::ptr::eq(self, other) {
+        if core::ptr::eq(self, other) {
             return true;
         }
 
@@ -1178,7 +1181,7 @@ impl<A: Clone> Vector<A> {
                         middle_level: tree.middle_level,
                         outer_f: PoolRef::new(&pool.value_pool, of2),
                         inner_f: replace_pool_def(&pool.value_pool, &mut tree.inner_f),
-                        middle: std::mem::take(&mut tree.middle),
+                        middle: core::mem::take(&mut tree.middle),
                         inner_b: replace_pool_def(&pool.value_pool, &mut tree.inner_b),
                         outer_b: replace_pool_def(&pool.value_pool, &mut tree.outer_b),
                     };
@@ -1199,7 +1202,7 @@ impl<A: Clone> Vector<A> {
                         middle_level: tree.middle_level,
                         outer_f: PoolRef::new(&pool.value_pool, if2),
                         inner_f: PoolRef::<Chunk<A>>::default(&pool.value_pool),
-                        middle: std::mem::take(&mut tree.middle),
+                        middle: core::mem::take(&mut tree.middle),
                         inner_b: replace_pool_def(&pool.value_pool, &mut tree.inner_b),
                         outer_b: replace_pool_def(&pool.value_pool, &mut tree.outer_b),
                     };
@@ -1733,7 +1736,7 @@ impl<A: Clone + Eq> PartialEq for Vector<A> {
             (left.is_empty() && right.is_empty()) || PoolRef::ptr_eq(left, right)
         }
 
-        if std::ptr::eq(self, other) {
+        if core::ptr::eq(self, other) {
             return true;
         }
 

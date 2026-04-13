@@ -21,19 +21,24 @@
 //! [std::hash::Hash]: https://doc.rust-lang.org/std/hash/trait.Hash.html
 //! [std::collections::hash_map::RandomState]: https://doc.rust-lang.org/std/collections/hash_map/struct.RandomState.html
 
-use std::borrow::Borrow;
-use std::cmp::Ordering;
+use alloc::borrow::ToOwned;
+use alloc::vec::Vec;
+use core::borrow::Borrow;
+use core::cmp::Ordering;
+#[cfg(feature = "std")]
 use std::collections::hash_map::RandomState;
+#[cfg(feature = "std")]
 use std::collections::{self, BTreeSet};
-use std::fmt::{Debug, Error, Formatter};
-use std::hash::{BuildHasher, Hash, Hasher};
-use std::iter::FusedIterator;
-use std::iter::{FromIterator, IntoIterator, Sum};
-use std::ops::{Add, Deref, Mul};
+use core::fmt::{Debug, Error, Formatter};
+use core::hash::{BuildHasher, Hash, Hasher};
+use core::iter::FusedIterator;
+use core::iter::{FromIterator, IntoIterator, Sum};
+use core::ops::{Add, Deref, Mul};
 
 use crate::nodes::hamt::{hash_key, Drain as NodeDrain, HashValue, Iter as NodeIter, Node};
 use crate::ordset::OrdSet;
 use crate::util::{Pool, PoolRef, Ref};
+#[cfg(feature = "std")]
 use crate::Vector;
 
 /// Construct a set from a sequence of values.
@@ -50,6 +55,7 @@ use crate::Vector;
 /// );
 /// # }
 /// ```
+#[cfg(feature = "std")]
 #[macro_export]
 macro_rules! hashset {
     () => { $crate::hashset::HashSet::new() };
@@ -91,7 +97,16 @@ def_pool!(HashSetPool<A>, Node<Value<A>>);
 /// [std::cmp::Eq]: https://doc.rust-lang.org/std/cmp/trait.Eq.html
 /// [std::hash::Hash]: https://doc.rust-lang.org/std/hash/trait.Hash.html
 /// [std::collections::hash_map::RandomState]: https://doc.rust-lang.org/std/collections/hash_map/struct.RandomState.html
+#[cfg(feature = "std")]
 pub struct HashSet<A, S = RandomState> {
+    hasher: Ref<S>,
+    pool: HashSetPool<A>,
+    root: PoolRef<Node<Value<A>>>,
+    size: usize,
+}
+
+#[cfg(not(feature = "std"))]
+pub struct HashSet<A, S> {
     hasher: Ref<S>,
     pool: HashSetPool<A>,
     root: PoolRef<Node<Value<A>>>,
@@ -125,6 +140,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<A> HashSet<A, RandomState> {
     /// Construct an empty set.
     #[must_use]
@@ -145,6 +161,7 @@ impl<A> HashSet<A, RandomState> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<A> HashSet<A, RandomState>
 where
     A: Hash + Eq + Clone,
@@ -217,7 +234,7 @@ impl<A, S> HashSet<A, S> {
     ///
     /// Time: O(1)
     pub fn ptr_eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self, other) || PoolRef::ptr_eq(&self.root, &other.root)
+        core::ptr::eq(self, other) || PoolRef::ptr_eq(&self.root, &other.root)
     }
 
     /// Get a reference to the memory pool used by this set.
@@ -335,15 +352,10 @@ where
         if self.len() != other.len() {
             return false;
         }
-        let mut seen = collections::HashSet::new();
+        // Since both sets have the same length, it suffices to check that
+        // every element in self exists in other.
         for value in self.iter() {
             if !other.contains(value) {
-                return false;
-            }
-            seen.insert(value);
-        }
-        for value in other.iter() {
-            if !seen.contains(&value) {
                 return false;
             }
         }
@@ -980,6 +992,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<A, S> From<Vector<A>> for HashSet<A, S>
 where
     A: Hash + Eq + Clone,
@@ -990,6 +1003,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a, A, S> From<&'a Vector<A>> for HashSet<A, S>
 where
     A: Hash + Eq + Clone,
@@ -1000,6 +1014,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<A, S> From<collections::HashSet<A>> for HashSet<A, S>
 where
     A: Eq + Hash + Clone,
@@ -1010,6 +1025,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a, A, S> From<&'a collections::HashSet<A>> for HashSet<A, S>
 where
     A: Eq + Hash + Clone,
@@ -1020,6 +1036,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a, A, S> From<&'a BTreeSet<A>> for HashSet<A, S>
 where
     A: Hash + Eq + Clone,
@@ -1068,7 +1085,7 @@ mod test {
     use crate::test::LolHasher;
     use ::proptest::num::i16;
     use ::proptest::proptest;
-    use std::hash::BuildHasherDefault;
+    use core::hash::BuildHasherDefault;
 
     #[test]
     fn insert_failing() {

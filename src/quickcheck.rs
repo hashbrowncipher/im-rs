@@ -1,7 +1,7 @@
 use crate::{HashMap, HashSet, OrdMap, OrdSet, Vector};
 use ::quickcheck::{Arbitrary, Gen};
-use std::hash::{BuildHasher, Hash};
-use std::iter::FromIterator;
+use core::hash::{BuildHasher, Hash};
+use core::iter::FromIterator;
 
 impl<A: Arbitrary + Sync + Clone> Arbitrary for Vector<A> {
     fn arbitrary(g: &mut Gen) -> Self {

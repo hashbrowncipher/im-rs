@@ -31,13 +31,15 @@ path = "./src/lib.rs"
 version_check = "0.9"
 
 [features]
+default = ["std"]
+std = ["sized-chunks/std"]
 debug = []
 
 [dependencies]
 typenum = "1.12"
 bitmaps = "2"
-sized-chunks = "0.6.4"
-rand_core = "0.6"
+sized-chunks = { version = "0.6.4", default-features = false }
+rand_core = { version = "0.6", default-features = false }
 rand_xoshiro = "0.6"
 quickcheck = { version = "1", optional = true }
 proptest = { version = "1", optional = true }

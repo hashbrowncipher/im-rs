@@ -339,6 +339,9 @@
 #![deny(unsafe_code, nonstandard_style)]
 #![warn(unreachable_pub, missing_docs)]
 #![cfg_attr(has_specialisation, feature(specialization))]
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
 
 #[cfg(test)]
 #[macro_use]

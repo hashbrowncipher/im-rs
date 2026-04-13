@@ -17,15 +17,19 @@
 //! [hashmap::HashMap]: ../hashmap/struct.HashMap.html
 //! [std::cmp::Ord]: https://doc.rust-lang.org/std/cmp/trait.Ord.html
 
-use std::borrow::Borrow;
-use std::cmp::Ordering;
+use alloc::borrow::ToOwned;
+use alloc::vec::Vec;
+use core::borrow::Borrow;
+use core::cmp::Ordering;
+#[cfg(feature = "std")]
 use std::collections;
-use std::fmt::{Debug, Error, Formatter};
-use std::hash::{BuildHasher, Hash, Hasher};
-use std::iter::{FromIterator, Iterator, Sum};
-use std::mem;
-use std::ops::{Add, Index, IndexMut, RangeBounds};
+use core::fmt::{Debug, Error, Formatter};
+use core::hash::{BuildHasher, Hash, Hasher};
+use core::iter::{FromIterator, Iterator, Sum};
+use core::mem;
+use core::ops::{Add, Index, IndexMut, RangeBounds};
 
+#[cfg(feature = "std")]
 use crate::hashmap::HashMap;
 use crate::nodes::btree::{BTreeValue, Insert, Node, Remove};
 #[cfg(has_specialisation)]
@@ -251,7 +255,7 @@ impl<K, V> OrdMap<K, V> {
     ///
     /// Time: O(1)
     pub fn ptr_eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self, other) || PoolRef::ptr_eq(&self.root, &other.root)
+        core::ptr::eq(self, other) || PoolRef::ptr_eq(&self.root, &other.root)
     }
 
     /// Get the size of a map.
@@ -2103,6 +2107,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<K: Ord, V, RK: Eq + Hash, RV> From<collections::HashMap<RK, RV>> for OrdMap<K, V>
 where
     K: Ord + Clone + From<RK>,
@@ -2113,6 +2118,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a, K, V, OK, OV, RK, RV> From<&'a collections::HashMap<RK, RV>> for OrdMap<K, V>
 where
     K: Ord + Clone + From<OK>,
@@ -2129,6 +2135,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<K: Ord, V, RK, RV> From<collections::BTreeMap<RK, RV>> for OrdMap<K, V>
 where
     K: Ord + Clone + From<RK>,
@@ -2139,6 +2146,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a, K: Ord, V, RK, RV, OK, OV> From<&'a collections::BTreeMap<RK, RV>> for OrdMap<K, V>
 where
     K: Ord + Clone + From<OK>,
@@ -2155,12 +2163,14 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 impl<K: Ord + Hash + Eq + Clone, V: Clone, S: BuildHasher> From<HashMap<K, V, S>> for OrdMap<K, V> {
     fn from(m: HashMap<K, V, S>) -> Self {
         m.into_iter().collect()
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a, K: Ord + Hash + Eq + Clone, V: Clone, S: BuildHasher> From<&'a HashMap<K, V, S>>
     for OrdMap<K, V>
 {
@@ -2396,7 +2406,7 @@ mod test {
     #[test]
     fn range_iter_big() {
         use crate::nodes::btree::NODE_SIZE;
-        use std::ops::Bound::Included;
+        use core::ops::Bound::Included;
         const N: usize = NODE_SIZE * NODE_SIZE * 5; // enough for a sizeable 3 level tree
 
         let data = (1usize..N).filter(|i| i % 2 == 0).map(|i| (i, ()));

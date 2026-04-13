@@ -17,14 +17,18 @@
 //! [hashset::HashSet]: ./struct.HashSet.html
 //! [std::cmp::Ord]: https://doc.rust-lang.org/std/cmp/trait.Ord.html
 
-use std::borrow::Borrow;
-use std::cmp::Ordering;
+use alloc::borrow::ToOwned;
+use alloc::vec::Vec;
+use core::borrow::Borrow;
+use core::cmp::Ordering;
+#[cfg(feature = "std")]
 use std::collections;
-use std::fmt::{Debug, Error, Formatter};
-use std::hash::{BuildHasher, Hash, Hasher};
-use std::iter::{FromIterator, IntoIterator, Sum};
-use std::ops::{Add, Deref, Mul, RangeBounds};
+use core::fmt::{Debug, Error, Formatter};
+use core::hash::{BuildHasher, Hash, Hasher};
+use core::iter::{FromIterator, IntoIterator, Sum};
+use core::ops::{Add, Deref, Mul, RangeBounds};
 
+#[cfg(feature = "std")]
 use crate::hashset::HashSet;
 use crate::nodes::btree::{
     BTreeValue, ConsumingIter as ConsumingNodeIter, DiffIter as NodeDiffIter, Insert,
@@ -274,7 +278,7 @@ impl<A> OrdSet<A> {
     ///
     /// Time: O(1)
     pub fn ptr_eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self, other) || PoolRef::ptr_eq(&self.root, &other.root)
+        core::ptr::eq(self, other) || PoolRef::ptr_eq(&self.root, &other.root)
     }
 
     /// Get a reference to the memory pool used by this set.
@@ -1132,36 +1136,42 @@ impl<'a, A: Ord + Clone> From<&'a Vec<A>> for OrdSet<A> {
     }
 }
 
+#[cfg(feature = "std")]
 impl<A: Eq + Hash + Ord + Clone> From<collections::HashSet<A>> for OrdSet<A> {
     fn from(hash_set: collections::HashSet<A>) -> Self {
         hash_set.into_iter().collect()
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a, A: Eq + Hash + Ord + Clone> From<&'a collections::HashSet<A>> for OrdSet<A> {
     fn from(hash_set: &collections::HashSet<A>) -> Self {
         hash_set.iter().cloned().collect()
     }
 }
 
+#[cfg(feature = "std")]
 impl<A: Ord + Clone> From<collections::BTreeSet<A>> for OrdSet<A> {
     fn from(btree_set: collections::BTreeSet<A>) -> Self {
         btree_set.into_iter().collect()
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a, A: Ord + Clone> From<&'a collections::BTreeSet<A>> for OrdSet<A> {
     fn from(btree_set: &collections::BTreeSet<A>) -> Self {
         btree_set.iter().cloned().collect()
     }
 }
 
+#[cfg(feature = "std")]
 impl<A: Hash + Eq + Ord + Clone, S: BuildHasher> From<HashSet<A, S>> for OrdSet<A> {
     fn from(hashset: HashSet<A, S>) -> Self {
         hashset.into_iter().collect()
     }
 }
 
+#[cfg(feature = "std")]
 impl<'a, A: Hash + Eq + Ord + Clone, S: BuildHasher> From<&'a HashSet<A, S>> for OrdSet<A> {
     fn from(hashset: &HashSet<A, S>) -> Self {
         hashset.into_iter().cloned().collect()
